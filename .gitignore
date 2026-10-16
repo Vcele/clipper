@@ -20,3 +20,7 @@ target/
 output/*
 .env
 secret.deleteme
+
+# speech recognition library and models (scripts/fetch-moonshine.sh)
+vendor/
+models/

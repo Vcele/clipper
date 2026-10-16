@@ -2,6 +2,7 @@ use {
   crate::{
     composer::{DirectorImplementation, SAMPLING_RATE},
     handler::HandlerManager,
+    triggers::TriggerHandle,
     voice::Handler as VoiceHandler,
   },
   serenity::{
@@ -12,7 +13,7 @@ use {
   },
   songbird::{
     driver::{Channels, DecodeConfig, DecodeMode, SampleRate},
-    Config, SerenityInit,
+    Config, SerenityInit, Songbird,
   },
   std::sync::Arc,
 };
@@ -35,6 +36,7 @@ impl EventHandler for Handler {
 pub struct DiscordClient {
   pub director: DirectorImplementation,
   pub http: Arc<Http>,
+  pub songbird: Arc<Songbird>,
   #[allow(dead_code)]
   pub cache: Arc<Cache>,
 }
@@ -43,12 +45,13 @@ impl DiscordClient {
   pub async fn new(
     token: &str,
     director: DirectorImplementation,
+    trigger: Option<TriggerHandle>,
   ) -> Result<DiscordClient, DiscordClientError> {
     let mut handler_manager = HandlerManager::new();
 
     handler_manager.add_handler(Box::from(Handler));
     handler_manager.add_handler(Box::from(crate::commands::Handler));
-    handler_manager.add_handler(Box::from(VoiceHandler::new(director.clone())));
+    handler_manager.add_handler(Box::from(VoiceHandler::new(director.clone(), trigger)));
 
     // MESSAGE_CONTENT is privileged and only needed for the ~info command
     let intents = GatewayIntents::GUILDS
@@ -57,14 +60,13 @@ impl DiscordClient {
       | GatewayIntents::MESSAGE_CONTENT;
 
     assert_eq!(SAMPLING_RATE, 48_000);
-    let songbird_config = Config::default().decode_mode(DecodeMode::Decode(DecodeConfig::new(
-      Channels::Stereo,
-      SampleRate::Hz48000,
-    )));
+    let songbird = Songbird::serenity_from_config(Config::default().decode_mode(
+      DecodeMode::Decode(DecodeConfig::new(Channels::Stereo, SampleRate::Hz48000)),
+    ));
 
     let mut client = Client::builder(token, intents)
       .event_handler(handler_manager)
-      .register_songbird_from_config(songbird_config)
+      .register_songbird_with(songbird.clone())
       .await
       .map_err(|e| DiscordClientError::ClientCreation(Box::new(e)))?;
 
@@ -81,6 +83,7 @@ impl DiscordClient {
     Ok(DiscordClient {
       director,
       http,
+      songbird,
       cache,
     })
   }

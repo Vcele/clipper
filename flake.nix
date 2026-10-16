@@ -24,6 +24,9 @@
 
           RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
 
+          # the prebuilt libmoonshine (scripts/fetch-moonshine.sh) needs libstdc++ at runtime
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
+
           shellHook = ''
             if [ -f .env ]; then
               set -a; . ./.env; set +a
