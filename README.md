@@ -7,14 +7,15 @@ clip-bot that allows you to clip the last 30 seconds of audio in a voicechat. It
 ## setup
 
 1. Go to https://discord.com/developers/applications and create an application
-2. add to server
+   - under "Bot", enable the **Message Content Intent** (needed for the `~info` command)
+2. add to server (permissions: View Channels, Send Messages, Attach Files, Connect, Speak)
 3. create "#clips" text channel
 4. copy server id
 5. run the bot with the configuration in the environment (read at runtime, no rebuild needed):
    ```sh
    TOKEN=DISCORD_BOT_TOKEN PORT=SERVER_PORT cargo run --release
    ```
-   (if your on linux you might need to install libopus-dev)
+   (if your on linux you might need to install libopus-dev; with nix, `nix develop` provides all dependencies and loads a `.env` file containing these variables)
 6. go to http://localhost:{PORT}/clip/{server id}
 
 Clips are written to `output/<server id>/` relative to the working directory.

@@ -18,3 +18,5 @@ target/
 .cargo/config.toml
 
 output/*
+.env
+secret.deleteme
